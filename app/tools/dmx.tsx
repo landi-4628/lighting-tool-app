@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/components/ui/page-header';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -16,6 +17,7 @@ interface Fixture {
 
 export default function DmxScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [universe, setUniverse] = useState('1');
   const [fixtures, setFixtures] = useState<Fixture[]>([
     { id: '1', name: '灯具 1', channels: '16' },
@@ -54,12 +56,12 @@ export default function DmxScreen() {
   const results = calculateAddresses();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? 0 : 16}]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <PageHeader title="DMX 地址码" subtitle="计算灯具链的起始地址与 DIP 拨码" />
+        <PageHeader title="DMX 地址码" subtitle="计算灯具链的起始地址与 DIP 拨码" showTopSafeArea={false} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -178,6 +180,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 8,
+    paddingRight: 16,
   },
   backButton: {
     padding: 8,
@@ -187,6 +190,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 8,
+    paddingBottom: 32,
   },
   sectionTitle: {
     fontSize: 15,

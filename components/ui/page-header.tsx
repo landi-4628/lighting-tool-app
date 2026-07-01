@@ -1,16 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
   style?: ViewStyle;
+  showTopSafeArea?: boolean;
 }
 
-export function PageHeader({ title, subtitle, style }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, style, showTopSafeArea = true }: PageHeaderProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, showTopSafeArea && { paddingTop: insets.top }, style]}>
       <Text style={styles.title}>{title}</Text>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
     </View>

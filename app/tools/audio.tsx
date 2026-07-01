@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/components/ui/page-header';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -10,6 +11,7 @@ import { Colors } from '@/constants/colors';
 
 export default function AudioScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState(0);
 
   const tabs = [
@@ -19,12 +21,12 @@ export default function AudioScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? 0 : 16}]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <PageHeader title="音频工具" subtitle="格式转换 · 波形裁剪 · 节拍标记" />
+        <PageHeader title="音频工具" subtitle="格式转换 · 波形裁剪 · 节拍标记" showTopSafeArea={false} />
       </View>
 
       <View style={styles.content}>
@@ -149,6 +151,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 8,
+    paddingRight: 16,
   },
   backButton: {
     padding: 8,
@@ -157,6 +160,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingBottom: 32,
   },
   tabGroup: {
     marginVertical: 12,
