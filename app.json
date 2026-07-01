@@ -38,6 +38,12 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "允许 $(PRODUCT_NAME) 访问您的麦克风以检测节拍"
+        }
       ]
     ],
     "experiments": {
