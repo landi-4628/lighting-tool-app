@@ -18,7 +18,7 @@ import { GlassInput } from '@/components/ui/glass-input';
 import { GlassButton } from '@/components/ui/glass-button';
 import { GlassTabGroup } from '@/components/ui/glass-tab-group';
 import { Colors } from '@/constants/colors';
-import { Paths, File as ExpoFile } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 
 interface Channel {
   id: string;
@@ -340,17 +340,19 @@ export default function FixtureScreen() {
     try {
       const xmlContent = generateXML();
       const fileName = `${model.replace(/\s+/g, '_')}_${formats[activeFormat].label}.xml`;
-      const documentsDir = Paths.document;
-      const file = documentsDir.createFile(fileName, 'application/xml');
-      await file.write(xmlContent);
+      const fileUri = FileSystem.documentDirectory + fileName;
+      
+      await FileSystem.writeAsStringAsync(fileUri, xmlContent, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
 
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(file.uri, {
+        await Sharing.shareAsync(fileUri, {
           mimeType: 'application/xml',
           dialogTitle: '导出灯库文件',
         });
       } else {
-        Alert.alert('成功', `文件已保存到: ${file.uri}`);
+        Alert.alert('成功', `文件已保存到: ${fileUri}`);
       }
     } catch (error) {
       console.error('Export error:', error);
