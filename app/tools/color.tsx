@@ -584,7 +584,6 @@ export default function ColorScreen() {
           </ScrollView>
         )}
       </View>
-      </View>
     </SafeAreaView>
     </View>
   );
