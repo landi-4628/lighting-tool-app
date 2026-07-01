@@ -11,7 +11,6 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { PageHeader } from '@/components/ui/page-header';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -19,7 +18,7 @@ import { GlassInput } from '@/components/ui/glass-input';
 import { GlassButton } from '@/components/ui/glass-button';
 import { GlassTabGroup } from '@/components/ui/glass-tab-group';
 import { Colors } from '@/constants/colors';
-import { Paths, File } from 'expo-file-system';
+import { Paths, File as ExpoFile } from 'expo-file-system';
 
 interface Channel {
   id: string;
