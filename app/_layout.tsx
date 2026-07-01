@@ -19,7 +19,8 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: '#06070b' },
-          animation: 'slide_from_right',
+          animation: 'fade',
+          animationDuration: 150,
         }}
       >
         <Stack.Screen name="index" />
@@ -31,7 +32,11 @@ export default function RootLayout() {
         <Stack.Screen name="tools/knowledge" options={{ title: '灯光理论知识库' }} />
         <Stack.Screen name="tools/power" options={{ title: '功率计算' }} />
         <Stack.Screen name="tools/troubleshoot" options={{ title: '故障分析' }} />
+        <Stack.Screen name="tools/beam" options={{ title: '光束角度' }} />
+        <Stack.Screen name="tools/glossary" options={{ title: '术语翻译' }} />
         <Stack.Screen name="tools/ma-commands" options={{ title: 'MA 宏命令' }} />
+        <Stack.Screen name="tools/illuminance" options={{ title: '照度色温' }} />
+        <Stack.Screen name="tools/color" options={{ title: '调色配色' }} />
       </Stack>
     </ThemeProvider>
   );
