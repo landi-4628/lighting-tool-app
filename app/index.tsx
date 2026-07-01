@@ -75,7 +75,7 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const handleToolPress = (toolId: string) => {
-    router.push(`/tools/${toolId}`);
+    router.push(toolId as any);
   };
 
   return (

@@ -30,8 +30,8 @@ export function GlassButton({
   loading = false,
   size = 'medium',
 }: GlassButtonProps) {
-  const getButtonStyle = () => {
-    const baseStyle = [styles.button];
+  const getButtonStyle = (): ViewStyle[] => {
+    const baseStyle: ViewStyle[] = [styles.button];
 
     switch (size) {
       case 'small':
@@ -62,8 +62,8 @@ export function GlassButton({
     return baseStyle;
   };
 
-  const getTextStyle = () => {
-    const baseStyle = [styles.text];
+  const getTextStyle = (): TextStyle[] => {
+    const baseStyle: TextStyle[] = [styles.text];
 
     switch (variant) {
       case 'secondary':
