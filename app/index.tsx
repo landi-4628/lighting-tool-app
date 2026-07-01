@@ -70,6 +70,24 @@ const tools: ToolItem[] = [
     gradientFrom: 'rgba(251, 146, 60, 0.1)',
     gradientTo: 'rgba(251, 146, 60, 0.02)',
   },
+  {
+    id: 'power',
+    title: '功率计算',
+    description: '负载统计 / 电流计算 / 线径选择',
+    icon: '⚡',
+    color: '#fbbf24',
+    gradientFrom: 'rgba(251, 191, 36, 0.15)',
+    gradientTo: 'rgba(251, 191, 36, 0.03)',
+  },
+  {
+    id: 'troubleshoot',
+    title: '故障分析',
+    description: '诊断问题 / 排查故障 / 解决方案',
+    icon: '🔧',
+    color: '#f43f5e',
+    gradientFrom: 'rgba(244, 63, 94, 0.1)',
+    gradientTo: 'rgba(244, 63, 94, 0.02)',
+  },
 ];
 
 export default function HomeScreen() {

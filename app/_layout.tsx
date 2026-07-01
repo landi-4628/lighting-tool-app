@@ -29,6 +29,9 @@ export default function RootLayout() {
         <Stack.Screen name="tools/dmx" options={{ title: 'DMX 地址码' }} />
         <Stack.Screen name="tools/fixture" options={{ title: '灯库制作' }} />
         <Stack.Screen name="tools/knowledge" options={{ title: '灯光理论知识库' }} />
+        <Stack.Screen name="tools/power" options={{ title: '功率计算' }} />
+        <Stack.Screen name="tools/troubleshoot" options={{ title: '故障分析' }} />
+        <Stack.Screen name="tools/ma-commands" options={{ title: 'MA 宏命令' }} />
       </Stack>
     </ThemeProvider>
   );
