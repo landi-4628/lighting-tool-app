@@ -7,20 +7,18 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Audio from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Haptics from 'expo-haptics';
+import { StatusBar } from 'expo-status-bar';
 import { PageHeader } from '@/components/ui/page-header';
 import { GlassCard } from '@/components/ui/glass-card';
 import { GlassTabGroup } from '@/components/ui/glass-tab-group';
 import { GlassButton } from '@/components/ui/glass-button';
 import { Colors } from '@/constants/colors';
-
-type TabValue = 'tap' | 'audio' | 'mic';
 
 interface TapData {
   timestamps: number[];
@@ -169,7 +167,7 @@ export default function BpmScreen() {
           soundRef.current = null;
         }
       }
-    } catch (error) {
+    } catch {
       Alert.alert('错误', '无法选择音频文件');
     }
   }, []);
@@ -225,7 +223,7 @@ export default function BpmScreen() {
           isPlaying: true,
         }));
       }
-    } catch (error) {
+    } catch {
       Alert.alert('错误', '无法播放音频');
     }
   }, [audioData.uri]);
@@ -358,7 +356,7 @@ export default function BpmScreen() {
           // Stream may not be ready yet
         }
       }, 50); // Check every 50ms
-    } catch (error) {
+    } catch {
       Alert.alert('错误', '无法启动麦克风');
     }
   }, [micData.permissionGranted, requestMicPermission, calculateBpm]);
@@ -799,8 +797,6 @@ export default function BpmScreen() {
   );
 }
 
-import { StatusBar } from 'expo-status-bar';
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -910,7 +906,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     lineHeight: 20,
   },
-  // Audio mode styles
   audioCard: {
     padding: 16,
     marginBottom: 16,
@@ -1071,7 +1066,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 4,
   },
-  // Mic mode styles
   micArea: {
     alignItems: 'center',
     marginBottom: 20,
