@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/components/ui/page-header';
@@ -277,17 +277,6 @@ const categories: Category[] = [
   },
 ];
 
-const categoryIcons: { [key: string]: string } = {
-  fixtures: 'bulb-outline',
-  positions: 'grid-outline',
-  color: 'color-palette-outline',
-  dmx: 'git-network-outline',
-  console: 'options-outline',
-  power: 'flash-outline',
-  lightpath: 'analytics-outline',
-  workflow: 'git-branch-outline',
-};
-
 export default function KnowledgeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -353,10 +342,11 @@ export default function KnowledgeScreen() {
               setSearchQuery('');
               setExpandedCard(null);
             }}
+            activeOpacity={0.7}
           >
             <Ionicons 
-              name={categoryIcons[category.id] as any} 
-              size={18} 
+              name={category.icon as any} 
+              size={16} 
               color={activeCategory === index ? Colors.primary : Colors.textSecondary} 
               style={styles.categoryIcon}
             />
@@ -365,6 +355,7 @@ export default function KnowledgeScreen() {
                 styles.categoryText,
                 activeCategory === index && styles.categoryTextActive,
               ]}
+              numberOfLines={1}
             >
               {category.name}
             </Text>
@@ -448,27 +439,27 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   categoryScroll: {
-    maxHeight: 56,
+    maxHeight: 48,
   },
   categoryContent: {
     paddingHorizontal: 16,
-    gap: 8,
     paddingBottom: 12,
+    gap: 8,
   },
   categoryTab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     backgroundColor: Colors.glass,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.border,
     marginRight: 8,
   },
   categoryTabActive: {
-    backgroundColor: 'rgba(56, 189, 248, 0.15)',
-    borderColor: 'rgba(125, 211, 252, 0.3)',
+    backgroundColor: Colors.primaryGlow,
+    borderColor: Colors.borderActive,
   },
   categoryIcon: {
     marginRight: 6,
