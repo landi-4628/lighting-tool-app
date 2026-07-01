@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Share } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Share, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -357,7 +357,9 @@ export default function ColorScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
+      <SafeAreaView style={styles.container} edges={['top']}>
       <View style={[styles.header, { paddingTop: insets.top > 0 ? 0 : 16 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
@@ -582,7 +584,9 @@ export default function ColorScreen() {
           </ScrollView>
         )}
       </View>
+      </View>
     </SafeAreaView>
+    </View>
   );
 }
 

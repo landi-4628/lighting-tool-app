@@ -8,6 +8,7 @@ import {
   ScrollView,
   Share,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -670,7 +671,9 @@ export default function BeamScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
+      <SafeAreaView style={styles.container} edges={['top']}>
       <View style={[styles.header, { paddingTop: insets.top > 0 ? 0 : 16 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
@@ -719,7 +722,8 @@ export default function BeamScreen() {
           </GlassButton>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
