@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Share } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,20 +33,20 @@ export default function DmxScreen() {
   const insets = useSafeAreaInsets();
   const [universe, setUniverse] = useState(1);
   const [fixtures, setFixtures] = useState<Fixture[]>([
-    { id: '1', name: '染色灯 1', channels: '16' },
-    { id: '2', name: '光束灯 1', channels: '8' },
-    { id: '3', name: '帕灯组', channels: '4' },
+    { id: '1', name: '鏌撹壊鐏?1', channels: '16' },
+    { id: '2', name: '鍏夋潫鐏?1', channels: '8' },
+    { id: '3', name: '甯曠伅缁?, channels: '4' },
   ]);
   const [activeTab, setActiveTab] = useState(0);
 
   const tabs = [
-    { label: '地址计算', value: 'calc' },
-    { label: 'DIP 对照表', value: 'dip' },
+    { label: '鍦板潃璁＄畻', value: 'calc' },
+    { label: 'DIP 瀵圭収琛?, value: 'dip' },
   ];
 
   const addFixture = () => {
     const newId = Date.now().toString();
-    setFixtures([...fixtures, { id: newId, name: `灯具 ${fixtures.length + 1}`, channels: '16' }]);
+    setFixtures([...fixtures, { id: newId, name: `鐏叿 ${fixtures.length + 1}`, channels: '16' }]);
   };
 
   const removeFixture = (id: string) => {
@@ -143,11 +143,11 @@ export default function DmxScreen() {
 
   const generateExportText = () => {
     const lines: string[] = [
-      'DMX 地址分配表',
+      'DMX 鍦板潃鍒嗛厤琛?,
       `Universe: ${universe}`,
-      `生成时间: ${new Date().toLocaleString()}`,
+      `鐢熸垚鏃堕棿: ${new Date().toLocaleString()}`,
       '',
-      '序号\t灯具名称\t通道数\t起始地址\t结束地址\tUniverse',
+      '搴忓彿\t鐏叿鍚嶇О\t閫氶亾鏁癨t璧峰鍦板潃\t缁撴潫鍦板潃\tUniverse',
       '----------------------------------------------',
     ];
 
@@ -158,16 +158,16 @@ export default function DmxScreen() {
     });
 
     lines.push('');
-    lines.push(`总通道数: ${totalChannels}`);
+    lines.push(`鎬婚€氶亾鏁? ${totalChannels}`);
     if (hasOverflow) {
-      lines.push('警告: 部分地址超出 DMX512 范围!');
+      lines.push('璀﹀憡: 閮ㄥ垎鍦板潃瓒呭嚭 DMX512 鑼冨洿!');
     }
 
     return lines.join('\n');
   };
 
   const generateCsv = () => {
-    const lines: string[] = ['序号,灯具名称,通道数,起始地址,结束地址,Universe'];
+    const lines: string[] = ['搴忓彿,鐏叿鍚嶇О,閫氶亾鏁?璧峰鍦板潃,缁撴潫鍦板潃,Universe'];
 
     calculateAddresses.forEach((result, index) => {
       lines.push(`${index + 1},"${result.name}",${result.channels},${result.start},${result.end},${result.universe}`);
@@ -180,14 +180,14 @@ export default function DmxScreen() {
     const text = generateExportText();
     const csv = generateCsv();
 
-    Alert.alert('导出地址表', '选择导出格式', [
+    Alert.alert('瀵煎嚭鍦板潃琛?, '閫夋嫨瀵煎嚭鏍煎紡', [
       {
-        text: '文本格式',
+        text: '鏂囨湰鏍煎紡',
         onPress: async () => {
           try {
             await Share.share({
               message: text,
-              title: 'DMX 地址分配表',
+              title: 'DMX 鍦板潃鍒嗛厤琛?,
             });
           } catch (error) {
             console.error('Share error:', error);
@@ -195,19 +195,19 @@ export default function DmxScreen() {
         },
       },
       {
-        text: 'CSV 格式',
+        text: 'CSV 鏍煎紡',
         onPress: async () => {
           try {
             await Share.share({
               message: csv,
-              title: 'DMX 地址分配表.csv',
+              title: 'DMX 鍦板潃鍒嗛厤琛?csv',
             });
           } catch (error) {
             console.error('Share error:', error);
           }
         },
       },
-      { text: '取消', style: 'cancel' },
+      { text: '鍙栨秷', style: 'cancel' },
     ]);
   };
 
@@ -223,8 +223,8 @@ export default function DmxScreen() {
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <PageHeader
-          title="DMX 地址码"
-          subtitle="计算灯具链的起始地址与 DIP 拨码"
+          title="DMX 鍦板潃鐮?
+          subtitle="璁＄畻鐏叿閾剧殑璧峰鍦板潃涓?DIP 鎷ㄧ爜"
           showTopSafeArea={false}
         />
       </View>
@@ -243,9 +243,9 @@ export default function DmxScreen() {
             <GlassCard style={styles.settingsCard}>
               <View style={styles.settingsHeader}>
                 <Ionicons name="git-network-outline" size={18} color={Colors.primary} />
-                <Text style={styles.settingsTitle}>Universe 设置</Text>
+                <Text style={styles.settingsTitle}>Universe 璁剧疆</Text>
               </View>
-              <Text style={styles.settingsSubtitle}>起始 Universe，当前支持 1-64</Text>
+              <Text style={styles.settingsSubtitle}>璧峰 Universe锛屽綋鍓嶆敮鎸?1-64</Text>
               <View style={styles.universeSelector}>
                 {Array.from({ length: 8 }, (_, i) => i + 1).map((u) => (
                   <TouchableOpacity
@@ -291,7 +291,7 @@ export default function DmxScreen() {
                 </View>
               )}
               <View style={styles.currentUniverse}>
-                <Text style={styles.currentUniverseLabel}>当前选择:</Text>
+                <Text style={styles.currentUniverseLabel}>褰撳墠閫夋嫨:</Text>
                 <View style={styles.currentUniverseBadge}>
                   <Text style={styles.currentUniverseValue}>Universe {universe}</Text>
                 </View>
@@ -302,21 +302,21 @@ export default function DmxScreen() {
             <GlassCard style={styles.fixturesCard}>
               <View style={styles.fixturesHeader}>
                 <View>
-                  <Text style={styles.sectionTitle}>灯具列表</Text>
-                  <Text style={styles.fixtureCount}>共 {fixtures.length} 台灯具</Text>
+                  <Text style={styles.sectionTitle}>鐏叿鍒楄〃</Text>
+                  <Text style={styles.fixtureCount}>鍏?{fixtures.length} 鍙扮伅鍏?/Text>
                 </View>
                 <GlassButton variant="secondary" size="small" onPress={addFixture}>
                   <View style={styles.addButtonContent}>
                     <Ionicons name="add" size={16} color={Colors.textSecondary} />
-                    <Text style={styles.addButtonText}>添加</Text>
+                    <Text style={styles.addButtonText}>娣诲姞</Text>
                   </View>
                 </GlassButton>
               </View>
 
               <View style={styles.fixtureHeaderRow}>
-                <Text style={[styles.fixtureHeaderText, { width: 32 }]}>序号</Text>
-                <Text style={[styles.fixtureHeaderText, { flex: 1 }]}>名称</Text>
-                <Text style={[styles.fixtureHeaderText, { width: 80 }]}>通道</Text>
+                <Text style={[styles.fixtureHeaderText, { width: 32 }]}>搴忓彿</Text>
+                <Text style={[styles.fixtureHeaderText, { flex: 1 }]}>鍚嶇О</Text>
+                <Text style={[styles.fixtureHeaderText, { width: 80 }]}>閫氶亾</Text>
                 <View style={{ width: 40 }} />
               </View>
 
@@ -326,7 +326,7 @@ export default function DmxScreen() {
                     <Text style={styles.fixtureIndexText}>{index + 1}</Text>
                   </View>
                   <GlassInput
-                    placeholder="灯具名称"
+                    placeholder="鐏叿鍚嶇О"
                     value={fixture.name}
                     onChangeText={(v) => updateFixture(fixture.id, 'name', v)}
                     style={styles.fixtureNameInput}
@@ -359,18 +359,18 @@ export default function DmxScreen() {
             {/* Calculation Results */}
             <GlassCard style={styles.resultsCard}>
               <View style={styles.resultsHeader}>
-                <Text style={styles.sectionTitle}>计算结果</Text>
+                <Text style={styles.sectionTitle}>璁＄畻缁撴灉</Text>
                 {hasOverflow && (
                   <View style={styles.overflowBadge}>
                     <Ionicons name="warning" size={14} color={Colors.warning} />
-                    <Text style={styles.overflowText}>超出范围</Text>
+                    <Text style={styles.overflowText}>瓒呭嚭鑼冨洿</Text>
                   </View>
                 )}
               </View>
 
               <View style={styles.resultHeaderRow}>
-                <Text style={[styles.resultHeaderText, { flex: 1 }]}>灯具</Text>
-                <Text style={[styles.resultHeaderText, { textAlign: 'right' }]}>地址</Text>
+                <Text style={[styles.resultHeaderText, { flex: 1 }]}>鐏叿</Text>
+                <Text style={[styles.resultHeaderText, { textAlign: 'right' }]}>鍦板潃</Text>
               </View>
 
               {calculateAddresses.map((result, index) => (
@@ -383,7 +383,7 @@ export default function DmxScreen() {
                 >
                   <View style={styles.resultInfo}>
                     <Text style={styles.resultName}>{result.name}</Text>
-                    <Text style={styles.resultChannels}>{result.channels} 通道</Text>
+                    <Text style={styles.resultChannels}>{result.channels} 閫氶亾</Text>
                   </View>
                   <View style={styles.resultAddressContainer}>
                     <View style={styles.resultAddressBadge}>
@@ -400,11 +400,11 @@ export default function DmxScreen() {
 
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>总通道数</Text>
+                  <Text style={styles.summaryLabel}>鎬婚€氶亾鏁?/Text>
                   <Text style={styles.summaryValue}>{totalChannels}</Text>
                 </View>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>占用 Universe</Text>
+                  <Text style={styles.summaryLabel}>鍗犵敤 Universe</Text>
                   <Text style={styles.summaryValue}>
                     {Math.ceil(
                       calculateAddresses.reduce((sum, r) => {
@@ -415,7 +415,7 @@ export default function DmxScreen() {
                   </Text>
                 </View>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>最后地址</Text>
+                  <Text style={styles.summaryLabel}>鏈€鍚庡湴鍧€</Text>
                   <Text style={styles.summaryValue}>
                     {lastResult ? lastResult.end || '--' : '--'}
                   </Text>
@@ -427,7 +427,7 @@ export default function DmxScreen() {
             <GlassButton style={styles.exportButton} onPress={handleExport}>
               <View style={styles.exportButtonContent}>
                 <Ionicons name="download-outline" size={18} color="#e0f2fe" />
-                <Text style={styles.exportButtonText}>导出地址表</Text>
+                <Text style={styles.exportButtonText}>瀵煎嚭鍦板潃琛?/Text>
               </View>
             </GlassButton>
 
@@ -435,19 +435,19 @@ export default function DmxScreen() {
             <GlassCard style={styles.quickRefCard}>
               <View style={styles.quickRefHeader}>
                 <Ionicons name="flash" size={18} color={Colors.warning} />
-                <Text style={styles.quickRefTitle}>快速参考</Text>
+                <Text style={styles.quickRefTitle}>蹇€熷弬鑰?/Text>
               </View>
               <View style={styles.quickRefContent}>
                 <View style={styles.quickRefItem}>
-                  <Text style={styles.quickRefLabel}>地址计算公式</Text>
-                  <Text style={styles.quickRefValue}>灯具N起始 = 上一台结束 + 1</Text>
+                  <Text style={styles.quickRefLabel}>鍦板潃璁＄畻鍏紡</Text>
+                  <Text style={styles.quickRefValue}>鐏叿N璧峰 = 涓婁竴鍙扮粨鏉?+ 1</Text>
                 </View>
                 <View style={styles.quickRefItem}>
-                  <Text style={styles.quickRefLabel}>DMX 范围</Text>
-                  <Text style={styles.quickRefValue}>每个 Universe: 1-512</Text>
+                  <Text style={styles.quickRefLabel}>DMX 鑼冨洿</Text>
+                  <Text style={styles.quickRefValue}>姣忎釜 Universe: 1-512</Text>
                 </View>
                 <View style={styles.quickRefItem}>
-                  <Text style={styles.quickRefLabel}>DIP 拨码</Text>
+                  <Text style={styles.quickRefLabel}>DIP 鎷ㄧ爜</Text>
                   <Text style={styles.quickRefValue}>2^0=1, 2^1=2, 2^2=4...</Text>
                 </View>
               </View>
@@ -459,10 +459,10 @@ export default function DmxScreen() {
             <GlassCard style={styles.dipCard}>
               <View style={styles.dipHeader}>
                 <Ionicons name="git-network-outline" size={20} color={Colors.warning} />
-                <Text style={styles.dipTitle}>DIP 拨码对照表</Text>
+                <Text style={styles.dipTitle}>DIP 鎷ㄧ爜瀵圭収琛?/Text>
               </View>
               <Text style={styles.dipDescription}>
-                DIP 拨码开关用于设置 DMX 起始地址。每个开关代表 2 的幂次方值。
+                DIP 鎷ㄧ爜寮€鍏崇敤浜庤缃?DMX 璧峰鍦板潃銆傛瘡涓紑鍏充唬琛?2 鐨勫箓娆℃柟鍊笺€?
               </Text>
 
               <View style={styles.dipGrid}>
@@ -481,16 +481,16 @@ export default function DmxScreen() {
 
             {/* DIP Examples */}
             <GlassCard style={styles.dipExamplesCard}>
-              <Text style={styles.examplesTitle}>拨码示例</Text>
-              <Text style={styles.examplesSubtitle}>常见地址的 DIP 拨码方式</Text>
+              <Text style={styles.examplesTitle}>鎷ㄧ爜绀轰緥</Text>
+              <Text style={styles.examplesSubtitle}>甯歌鍦板潃鐨?DIP 鎷ㄧ爜鏂瑰紡</Text>
 
               {[
-                { address: 1, desc: '只拨 ON 1' },
+                { address: 1, desc: '鍙嫧 ON 1' },
                 { address: 10, desc: 'ON 2 + ON 4' },
                 { address: 15, desc: 'ON 1+2+3+4' },
                 { address: 100, desc: 'ON 3+6+7' },
-                { address: 256, desc: '只拨 ON 9' },
-                { address: 512, desc: 'ON 9+1 (进位)' },
+                { address: 256, desc: '鍙嫧 ON 9' },
+                { address: 512, desc: 'ON 9+1 (杩涗綅)' },
               ].map((example, index) => (
                 <View key={index} style={styles.exampleRow}>
                   <View style={styles.exampleAddress}>
@@ -524,11 +524,11 @@ export default function DmxScreen() {
 
             {/* DIP Calculator */}
             <GlassCard style={styles.calculatorCard}>
-              <Text style={styles.calculatorTitle}>DIP 计算器</Text>
-              <Text style={styles.calculatorSubtitle}>输入地址查看对应的 DIP 拨码</Text>
+              <Text style={styles.calculatorTitle}>DIP 璁＄畻鍣?/Text>
+              <Text style={styles.calculatorSubtitle}>杈撳叆鍦板潃鏌ョ湅瀵瑰簲鐨?DIP 鎷ㄧ爜</Text>
 
               <View style={styles.calculatorInput}>
-                <Text style={styles.calculatorLabel}>DMX 地址</Text>
+                <Text style={styles.calculatorLabel}>DMX 鍦板潃</Text>
                 <View style={styles.calculatorInputRow}>
                   <GlassInput
                     placeholder="1-512"
@@ -541,15 +541,15 @@ export default function DmxScreen() {
                     onPress={() => {}}
                     style={styles.calcButton}
                   >
-                    计算
+                    璁＄畻
                   </GlassButton>
                 </View>
               </View>
 
               <View style={styles.calculatorResult}>
-                <Text style={styles.calcResultLabel}>需要拨动的开关:</Text>
+                <Text style={styles.calcResultLabel}>闇€瑕佹嫧鍔ㄧ殑寮€鍏?</Text>
                 <Text style={styles.calcResultValue}>
-                  <Text style={styles.calcResultHint}>在地址计算页面点击具体灯具查看</Text>
+                  <Text style={styles.calcResultHint}>鍦ㄥ湴鍧€璁＄畻椤甸潰鐐瑰嚮鍏蜂綋鐏叿鏌ョ湅</Text>
                 </Text>
               </View>
             </GlassCard>
@@ -558,15 +558,15 @@ export default function DmxScreen() {
             <GlassCard style={styles.tipsCard}>
               <View style={styles.tipsHeader}>
                 <Ionicons name="information-circle" size={18} color={Colors.primary} />
-                <Text style={styles.tipsTitle}>使用提示</Text>
+                <Text style={styles.tipsTitle}>浣跨敤鎻愮ず</Text>
               </View>
               <Text style={styles.tipsText}>
-                • 地址 1 = 开关 1 拨到 ON{'\n'}
-                • 地址 2 = 开关 2 拨到 ON{'\n'}
-                • 地址 3 = 开关 1 + 开关 2 都拨到 ON{'\n'}
-                • 地址 512 = 开关 9 拨到 ON{'\n'}
-                • 向下拨为 ON，向上拨为 OFF{'\n'}
-                • 多台设备地址不能重叠
+                鈥?鍦板潃 1 = 寮€鍏?1 鎷ㄥ埌 ON{'\n'}
+                鈥?鍦板潃 2 = 寮€鍏?2 鎷ㄥ埌 ON{'\n'}
+                鈥?鍦板潃 3 = 寮€鍏?1 + 寮€鍏?2 閮芥嫧鍒?ON{'\n'}
+                鈥?鍦板潃 512 = 寮€鍏?9 鎷ㄥ埌 ON{'\n'}
+                鈥?鍚戜笅鎷ㄤ负 ON锛屽悜涓婃嫧涓?OFF{'\n'}
+                鈥?澶氬彴璁惧鍦板潃涓嶈兘閲嶅彔
               </Text>
             </GlassCard>
           </>
@@ -1140,8 +1140,9 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   tipsText: {
-    fontSize: 13,
-    color: Colors.textMuted,
     lineHeight: 22,
   },
 });
+  },
+});
+
