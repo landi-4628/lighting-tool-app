@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -6,877 +6,640 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Share,
-  Alert,
-  StatusBar,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/components/ui/page-header';
 import { GlassCard } from '@/components/ui/glass-card';
-import { GlassInput } from '@/components/ui/glass-input';
-import { GlassButton } from '@/components/ui/glass-button';
-import { GlassTabGroup } from '@/components/ui/glass-tab-group';
+import { GlassSlider } from '@/components/ui/glass-slider';
 import { Colors } from '@/constants/colors';
 
-// Unit conversion constants
 const METERS_TO_FEET = 3.28084;
 const FEET_TO_METERS = 0.3048;
-const DEGREES_TO_RADIANS = Math.PI / 180;
-const RADIANS_TO_DEGREES = 180 / Math.PI;
 
-// Common beam angles for reference
-const COMMON_BEAM_ANGLES = [5, 10, 15, 20, 25, 30, 40, 50, 60, 90];
+const COMMON_ANGLES = [5, 10, 15, 20, 30, 45, 60];
+const COMMON_DISTANCES_M = [2, 5, 10, 20, 50];
 
-interface CalculationResult {
-  label: string;
-  value: string;
+type TabKey = 'diameter' | 'angle';
+type Unit = 'metric' | 'imperial';
+
+const TABS: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'diameter', label: '直径', icon: 'aperture-outline' },
+  { key: 'angle', label: '角度', icon: 'triangle-outline' },
+];
+
+// ============================================================
+// Cone Diagram
+// ============================================================
+interface ConeDiagramProps {
+  angle: number;
+  dist: number;
+  diameter: number;
   unit: string;
-  highlight?: boolean;
 }
 
-type UnitSystem = 'metric' | 'imperial';
-type AngleUnit = 'degrees' | 'radians';
+const ConeDiagram = React.memo(function ConeDiagram({ angle, dist, diameter, unit }: ConeDiagramProps) {
+  const ARENA_W = 240, ARENA_H = 180;
+  const lampY = 20, groundY = 155;
+  const beamH = groundY - lampY;
+  const half = Math.max(8, Math.min(95, 100 * Math.tan((angle * Math.PI) / 360)));
+  const CX = ARENA_W / 2;
 
-export default function BeamScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-
-  // Tab state
-  const [activeTab, setActiveTab] = useState(0);
-
-  // Unit settings
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
-  const [angleUnit, setAngleUnit] = useState<AngleUnit>('degrees');
-
-  // Distance calculation inputs
-  const [height, setHeight] = useState('');
-  const [angle, setAngle] = useState('');
-
-  // Spot diameter inputs
-  const [distance, setDistance] = useState('');
-  const [beamAngle, setBeamAngle] = useState('');
-
-  // Illuminance inputs
-  const [lumens, setLumens] = useState('');
-  const [illumDistance, setIllumDistance] = useState('');
-  const [illumAngle, setIllumAngle] = useState('');
-
-  const tabs = [
-    { label: '投射距离', value: 'distance' },
-    { label: '光斑直径', value: 'spot' },
-    { label: '照度计算', value: 'illuminance' },
-  ];
-
-  // Convert input value based on unit system
-  const toMeters = useCallback(
-    (value: number): number => {
-      return unitSystem === 'imperial' ? value * FEET_TO_METERS : value;
-    },
-    [unitSystem]
-  );
-
-  const fromMeters = useCallback(
-    (value: number): number => {
-      return unitSystem === 'imperial' ? value * METERS_TO_FEET : value;
-    },
-    [unitSystem]
-  );
-
-  // Convert angle based on unit setting
-  const toRadians = useCallback(
-    (value: number): number => {
-      return angleUnit === 'radians' ? value : value * DEGREES_TO_RADIANS;
-    },
-    [angleUnit]
-  );
-
-  const fromRadians = useCallback(
-    (value: number): number => {
-      return angleUnit === 'radians' ? value : value * RADIANS_TO_DEGREES;
-    },
-    [angleUnit]
-  );
-
-  // Calculate projection distance: d = h / tan(θ)
-  const projectionResults = useMemo((): CalculationResult[] => {
-    const h = parseFloat(height);
-    const a = parseFloat(angle);
-
-    if (isNaN(h) || isNaN(a) || h <= 0 || a === 0) {
-      return [];
-    }
-
-    const heightMeters = toMeters(h);
-    const angleRadians = toRadians(a);
-
-    if (angleRadians <= 0) return [];
-
-    const distanceMeters = heightMeters / Math.tan(angleRadians);
-    const distanceDisplay = fromMeters(distanceMeters);
-    const horizontalOffset = distanceMeters * Math.sin(angleRadians);
-
-    return [
-      {
-        label: unitSystem === 'metric' ? '水平距离' : '水平距离',
-        value: distanceDisplay.toFixed(2),
-        unit: unitSystem === 'metric' ? '米' : '英尺',
-      },
-      {
-        label: '垂直下落',
-        value: height.toString(),
-        unit: unitSystem === 'metric' ? '米' : '英尺',
-      },
-      {
-        label: '斜边长度',
-        value: fromMeters(heightMeters / Math.cos(angleRadians)).toFixed(2),
-        unit: unitSystem === 'metric' ? '米' : '英尺',
-      },
-      {
-        label: '水平偏移',
-        value: fromMeters(horizontalOffset).toFixed(2),
-        unit: unitSystem === 'metric' ? '米' : '英尺',
-      },
-    ];
-  }, [height, angle, unitSystem, angleUnit, toMeters, fromMeters, toRadians, fromRadians]);
-
-  // Calculate spot diameter: diameter = 2 * distance * tan(beamAngle / 2)
-  const spotResults = useMemo((): CalculationResult[] => {
-    const d = parseFloat(distance);
-    const ba = parseFloat(beamAngle);
-
-    if (isNaN(d) || isNaN(ba) || d <= 0 || ba <= 0) {
-      return [];
-    }
-
-    const distanceMeters = toMeters(d);
-    const beamAngleRadians = toRadians(ba);
-
-    const radius = distanceMeters * Math.tan(beamAngleRadians / 2);
-    const diameter = radius * 2;
-    const area = Math.PI * radius * radius;
-
-    return [
-      {
-        label: '光斑直径',
-        value: fromMeters(diameter).toFixed(2),
-        unit: unitSystem === 'metric' ? '米' : '英尺',
-        highlight: true,
-      },
-      {
-        label: '光斑半径',
-        value: fromMeters(radius).toFixed(2),
-        unit: unitSystem === 'metric' ? '米' : '英尺',
-      },
-      {
-        label: '光斑面积',
-        value: (area * (unitSystem === 'imperial' ? METERS_TO_FEET * METERS_TO_FEET : 1)).toFixed(2),
-        unit: unitSystem === 'metric' ? 'm²' : 'ft²',
-      },
-      {
-        label: '投射距离',
-        value: distance,
-        unit: unitSystem === 'metric' ? '米' : '英尺',
-      },
-    ];
-  }, [distance, beamAngle, unitSystem, angleUnit, toMeters, fromMeters, toRadians, fromRadians]);
-
-  // Calculate illuminance: E = (Φ / (4πd²)) × cos(θ)
-  const illuminanceResults = useMemo((): CalculationResult[] => {
-    const lm = parseFloat(lumens);
-    const d = parseFloat(illumDistance);
-    const a = parseFloat(illumAngle);
-
-    if (isNaN(lm) || isNaN(d) || isNaN(a) || lm <= 0 || d <= 0) {
-      return [];
-    }
-
-    const distanceMeters = toMeters(d);
-    const angleRadians = toRadians(a);
-    const cosAngle = Math.cos(angleRadians);
-
-    // Illuminance at the center point
-    const illuminance = (lm / (4 * Math.PI * distanceMeters * distanceMeters)) * cosAngle;
-
-    // Effective area for the beam
-    const beamArea = Math.PI * Math.pow(distanceMeters * Math.tan(angleRadians / 2), 2);
-    const avgIlluminance = illuminance > 0 ? lm / beamArea : 0;
-
-    // Calculate for different distances (inverse square law)
-    const distances = [2, 5, 10].map((factor) => factor * distanceMeters);
-    const illuminanceAtDistances = distances.map((dist) => {
-      return (lm / (4 * Math.PI * dist * dist)) * cosAngle;
-    });
-
-    return [
-      {
-        label: '中心照度',
-        value: illuminance >= 1000
-          ? (illuminance / 1000).toFixed(2) + ' k'
-          : illuminance.toFixed(1),
-        unit: 'Lux',
-        highlight: true,
-      },
-      {
-        label: '平均照度',
-        value: avgIlluminance >= 1000
-          ? (avgIlluminance / 1000).toFixed(2) + ' k'
-          : avgIlluminance.toFixed(1),
-        unit: 'Lux',
-      },
-      {
-        label: '2m 处照度',
-        value: illuminanceAtDistances[0] >= 1000
-          ? (illuminanceAtDistances[0] / 1000).toFixed(2) + ' k'
-          : illuminanceAtDistances[0].toFixed(1),
-        unit: 'Lux',
-      },
-      {
-        label: '5m 处照度',
-        value: illuminanceAtDistances[1] >= 1000
-          ? (illuminanceAtDistances[1] / 1000).toFixed(2) + ' k'
-          : illuminanceAtDistances[1].toFixed(1),
-        unit: 'Lux',
-      },
-      {
-        label: '10m 处照度',
-        value: illuminanceAtDistances[2] >= 1000
-          ? (illuminanceAtDistances[2] / 1000).toFixed(2) + ' k'
-          : illuminanceAtDistances[2].toFixed(1),
-        unit: 'Lux',
-      },
-    ];
-  }, [lumens, illumDistance, illumAngle, unitSystem, angleUnit, toMeters, toRadians]);
-
-  // Share results
-  const handleShare = useCallback(async () => {
-    let results: CalculationResult[] = [];
-    let title = '';
-
-    switch (activeTab) {
-      case 0:
-        results = projectionResults;
-        title = '投射距离计算结果';
-        break;
-      case 1:
-        results = spotResults;
-        title = '光斑直径计算结果';
-        break;
-      case 2:
-        results = illuminanceResults;
-        title = '照度计算结果';
-        break;
-    }
-
-    if (results.length === 0) {
-      Alert.alert('提示', '请先输入数据进行计算');
-      return;
-    }
-
-    const message = results.map((r) => `${r.label}: ${r.value} ${r.unit}`).join('\n');
-
-    try {
-      await Share.share({
-        message: `${title}\n\n${message}`,
-        title,
-      });
-    } catch {
-      Alert.alert('错误', '分享失败');
-    }
-  }, [activeTab, projectionResults, spotResults, illuminanceResults]);
-
-  // Quick set angle
-  const handleQuickAngle = useCallback((value: number) => {
-    setAngle(value.toString());
-  }, []);
-
-  // Quick set beam angle
-  const handleQuickBeamAngle = useCallback((value: number) => {
-    setBeamAngle(value.toString());
-  }, []);
-
-  // Clear all inputs
-  const handleClear = useCallback(() => {
-    switch (activeTab) {
-      case 0:
-        setHeight('');
-        setAngle('');
-        break;
-      case 1:
-        setDistance('');
-        setBeamAngle('');
-        break;
-      case 2:
-        setLumens('');
-        setIllumDistance('');
-        setIllumAngle('');
-        break;
-    }
-  }, [activeTab]);
-
-  // Render unit toggle
-  const renderUnitToggle = () => (
-    <View style={styles.unitToggleContainer}>
-      <View style={styles.unitToggleGroup}>
-        <TouchableOpacity
+  return (
+    <View style={styles.diagramCard}>
+      <Text style={styles.diagramHeader}>光束投射示意</Text>
+      <View style={[styles.coneArena, { width: ARENA_W, height: ARENA_H }]}>
+        <View style={[styles.lampBody, { left: CX - 10, top: lampY }]} />
+        <View
           style={[
-            styles.unitToggleButton,
-            unitSystem === 'metric' && styles.unitToggleButtonActive,
+            styles.cone,
+            {
+              top: lampY + 8,
+              left: CX - half,
+              height: beamH,
+              borderLeftWidth: half,
+              borderRightWidth: half,
+              borderBottomWidth: beamH,
+            },
           ]}
-          onPress={() => setUnitSystem('metric')}
-        >
-          <Text
-            style={[
-              styles.unitToggleText,
-              unitSystem === 'metric' && styles.unitToggleTextActive,
-            ]}
-          >
-            米
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.unitToggleButton,
-            unitSystem === 'imperial' && styles.unitToggleButtonActive,
-          ]}
-          onPress={() => setUnitSystem('imperial')}
-        >
-          <Text
-            style={[
-              styles.unitToggleText,
-              unitSystem === 'imperial' && styles.unitToggleTextActive,
-            ]}
-          >
-            英尺
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.unitToggleGroup}>
-        <TouchableOpacity
-          style={[
-            styles.unitToggleButton,
-            angleUnit === 'degrees' && styles.unitToggleButtonActive,
-          ]}
-          onPress={() => setAngleUnit('degrees')}
-        >
-          <Text
-            style={[
-              styles.unitToggleText,
-              angleUnit === 'degrees' && styles.unitToggleTextActive,
-            ]}
-          >
-            °
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.unitToggleButton,
-            angleUnit === 'radians' && styles.unitToggleButtonActive,
-          ]}
-          onPress={() => setAngleUnit('radians')}
-        >
-          <Text
-            style={[
-              styles.unitToggleText,
-              angleUnit === 'radians' && styles.unitToggleTextActive,
-            ]}
-          >
-            rad
-          </Text>
-        </TouchableOpacity>
+        />
+        <View style={[styles.axisLine, { left: CX - 0.5, top: lampY + 8, height: beamH }]} />
+        <View style={[styles.groundLine, { left: 8, right: 8 }]} />
+        <View style={[styles.spot, { left: CX - (half + 9), width: (half + 9) * 2 }]} />
+        <View style={[styles.coneEdgeLabel, { left: CX + half + 8, top: lampY + beamH / 2 - 8 }]}>
+          <Text style={styles.edgeLabelText}>θ = {angle}°</Text>
+        </View>
+        <View style={styles.coneBottomLabel}>
+          <Text style={styles.coneBottomText}>D = {diameter.toFixed(2)} {unit}</Text>
+        </View>
       </View>
     </View>
   );
+});
 
-  // Render projection distance calculator
-  const renderDistanceCalculator = () => (
-    <>
-      <GlassCard style={styles.card}>
-        <Text style={styles.sectionTitle}>输入参数</Text>
+// ============================================================
+// Results Cards (stable, memoized)
+// ============================================================
+interface ResultPairProps {
+  label1: string;
+  value1: number;
+  unit1: string;
+  label2: string;
+  value2: number;
+  unit2: string;
+  unit: string;
+}
 
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>高度</Text>
-            <GlassInput
-              placeholder="0.00"
-              value={height}
-              onChangeText={setHeight}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.inputUnit}>{unitSystem === 'metric' ? '米' : '英尺'}</Text>
-          </View>
+const ResultPair = React.memo(function ResultPair({
+  label1, value1, unit1,
+  label2, value2, unit2,
+}: ResultPairProps) {
+  return (
+    <GlassCard style={styles.resultCard} raised>
+      <View style={styles.resultsRow}>
+        <View style={styles.resultBox}>
+          <Text style={styles.resultLabel}>{label1}</Text>
+          <Text style={styles.resultValue}>{value1.toFixed(2)}</Text>
+          <Text style={styles.resultUnit}>{unit1}</Text>
         </View>
-
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>角度</Text>
-            <GlassInput
-              placeholder="0.00"
-              value={angle}
-              onChangeText={setAngle}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.inputUnit}>{angleUnit === 'degrees' ? '°' : 'rad'}</Text>
-          </View>
+        <View style={styles.resultDivider} />
+        <View style={styles.resultBox}>
+          <Text style={styles.resultLabel}>{label2}</Text>
+          <Text style={styles.resultValue}>{value2.toFixed(2)}</Text>
+          <Text style={styles.resultUnit}>{unit2}</Text>
         </View>
-
-        <View style={styles.quickButtons}>
-          <Text style={styles.quickButtonsLabel}>快速选择角度:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.quickButtonsRow}>
-              {[15, 30, 45, 60, 75, 90].map((a) => (
-                <TouchableOpacity
-                  key={a}
-                  style={[
-                    styles.quickButton,
-                    angle === String(a) && styles.quickButtonActive,
-                  ]}
-                  onPress={() => handleQuickAngle(a)}
-                >
-                  <Text
-                    style={[
-                      styles.quickButtonText,
-                      angle === String(a) && styles.quickButtonTextActive,
-                    ]}
-                  >
-                    {a}°
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-      </GlassCard>
-
-      {projectionResults.length > 0 && (
-        <GlassCard style={styles.card} raised>
-          <Text style={styles.sectionTitle}>计算结果</Text>
-          <View style={styles.resultsGrid}>
-            {projectionResults.map((result, index) => (
-              <View key={index} style={styles.resultItem}>
-                <Text style={styles.resultLabel}>{result.label}</Text>
-                <Text style={styles.resultValue}>{result.value}</Text>
-                <Text style={styles.resultUnit}>{result.unit}</Text>
-              </View>
-            ))}
-          </View>
-        </GlassCard>
-      )}
-
-      <GlassCard style={styles.card}>
-        <View style={styles.formulaCard}>
-          <Ionicons name="bulb-outline" size={20} color={Colors.primary} />
-          <Text style={styles.formulaText}>
-            公式: 距离 = 高度 / tan(角度)
-          </Text>
-        </View>
-        <Text style={styles.tipText}>
-          输入灯光安装高度和俯仰角度，计算光线投射到地面的落点距离。
-        </Text>
-      </GlassCard>
-    </>
+      </View>
+    </GlassCard>
   );
+});
 
-  // Render spot diameter calculator
-  const renderSpotCalculator = () => (
-    <>
-      <GlassCard style={styles.card}>
-        <Text style={styles.sectionTitle}>输入参数</Text>
+interface IllumResultProps {
+  centerLux: number;
+  diameter: number;
+  area: number;
+  unit: string;
+}
 
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>投射距离</Text>
-            <GlassInput
-              placeholder="0.00"
-              value={distance}
-              onChangeText={setDistance}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.inputUnit}>{unitSystem === 'metric' ? '米' : '英尺'}</Text>
+const IllumResult = React.memo(function IllumResult({ centerLux, diameter, area, unit }: IllumResultProps) {
+  const displayLux = centerLux.toFixed(0);
+  const luxUnit = 'lux';
+  const showExtras = area > 0;
+
+  return (
+    <GlassCard style={styles.resultCard} raised>
+      <View style={styles.illumHero}>
+        <Text style={styles.resultLabel}>中心照度</Text>
+        <Text style={styles.illumHeroValue}>{displayLux}</Text>
+        <Text style={styles.illumHeroUnit}>{luxUnit}</Text>
+      </View>
+      {showExtras && (
+        <View style={styles.resultsRow}>
+          <View style={styles.resultBox}>
+            <Text style={styles.resultLabel}>光斑直径</Text>
+            <Text style={styles.resultValueSmall}>{diameter.toFixed(2)}</Text>
+            <Text style={styles.resultUnitSmall}>{unit}</Text>
+          </View>
+          <View style={styles.resultDivider} />
+          <View style={styles.resultBox}>
+            <Text style={styles.resultLabel}>光斑面积</Text>
+            <Text style={styles.resultValueSmall}>{area.toFixed(2)}</Text>
+            <Text style={styles.resultUnitSmall}>m²</Text>
           </View>
         </View>
-
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>光束角度</Text>
-            <GlassInput
-              placeholder="0.00"
-              value={beamAngle}
-              onChangeText={setBeamAngle}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.inputUnit}>{angleUnit === 'degrees' ? '°' : 'rad'}</Text>
-          </View>
-        </View>
-
-        <View style={styles.quickButtons}>
-          <Text style={styles.quickButtonsLabel}>常见光束角度:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.quickButtonsRow}>
-              {COMMON_BEAM_ANGLES.map((a) => (
-                <TouchableOpacity
-                  key={a}
-                  style={[
-                    styles.quickButton,
-                    beamAngle === String(a) && styles.quickButtonActive,
-                  ]}
-                  onPress={() => handleQuickBeamAngle(a)}
-                >
-                  <Text
-                    style={[
-                      styles.quickButtonText,
-                      beamAngle === String(a) && styles.quickButtonTextActive,
-                    ]}
-                  >
-                    {a}°
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-      </GlassCard>
-
-      {spotResults.length > 0 && (
-        <GlassCard style={styles.card} raised>
-          <Text style={styles.sectionTitle}>计算结果</Text>
-          <View style={styles.resultsGrid}>
-            {spotResults.map((result, index) => (
-              <View
-                key={index}
-                style={[styles.resultItem, result.highlight && styles.resultItemHighlight]}
-              >
-                <Text style={styles.resultLabel}>{result.label}</Text>
-                <Text style={[styles.resultValue, result.highlight && styles.resultValueHighlight]}>
-                  {result.value}
-                </Text>
-                <Text style={styles.resultUnit}>{result.unit}</Text>
-              </View>
-            ))}
-          </View>
-        </GlassCard>
       )}
-
-      <GlassCard style={styles.card}>
-        <View style={styles.formulaCard}>
-          <Ionicons name="bulb-outline" size={20} color={Colors.primary} />
-          <Text style={styles.formulaText}>
-            公式: 直径 = 2 × 距离 × tan(角度 / 2)
-          </Text>
-        </View>
-        <Text style={styles.tipText}>
-          输入投射距离和光束角度，计算光斑的大小尺寸。
-        </Text>
-      </GlassCard>
-    </>
+    </GlassCard>
   );
+});
 
-  // Render illuminance calculator
-  const renderIlluminanceCalculator = () => (
-    <>
-      <GlassCard style={styles.card}>
-        <Text style={styles.sectionTitle}>输入参数</Text>
+// ============================================================
+// Main Screen
+// ============================================================
+export default function BeamScreen() {
+  const router = useRouter();
+  const [unit, setUnit] = useState<Unit>('metric');
+  const [tab, setTab] = useState<TabKey>('diameter');
 
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>光通量</Text>
-            <GlassInput
-              placeholder="0"
-              value={lumens}
-              onChangeText={setLumens}
-              keyboardType="numeric"
-              style={styles.input}
-            />
-            <Text style={styles.inputUnit}>流明</Text>
-          </View>
-        </View>
+  // Diameter tab
+  const [beamAngle, setBeamAngle] = useState(30);
+  const [beamDist, setBeamDist] = useState(10);
+  // Angle tab: derive beam angle from desired spot diameter and projection distance
+  const [spotDiameter, setSpotDiameter] = useState(5);
+  const [beamDistAngle, setBeamDistAngle] = useState(10);
+  // Shared across tabs
+  const [lumen, setLumen] = useState(5000);
 
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>距离</Text>
-            <GlassInput
-              placeholder="0.00"
-              value={illumDistance}
-              onChangeText={setIllumDistance}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.inputUnit}>{unitSystem === 'metric' ? '米' : '英尺'}</Text>
-          </View>
-        </View>
+  const toM = useCallback((v: number) => (unit === 'imperial' ? v * FEET_TO_METERS : v), [unit]);
+  const fromM = useCallback((v: number) => (unit === 'imperial' ? v * METERS_TO_FEET : v), [unit]);
+  const dU = unit === 'metric' ? 'm' : 'ft';
 
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>角度</Text>
-            <GlassInput
-              placeholder="0.00"
-              value={illumAngle}
-              onChangeText={setIllumAngle}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.inputUnit}>{angleUnit === 'degrees' ? '°' : 'rad'}</Text>
-          </View>
-        </View>
+  // Stable memoized calculation results
+  const diameterCalc = useMemo(() => {
+    if (beamAngle <= 0 || beamDist <= 0) return null;
+    const L = toM(beamDist);
+    const rad = (beamAngle * Math.PI) / 180;
+    const d = 2 * L * Math.tan(rad / 2);
+    return { diameter: fromM(d), radius: fromM(d / 2) };
+  }, [beamAngle, beamDist, toM, fromM]);
 
-        <View style={styles.referenceValues}>
-          <Text style={styles.referenceTitle}>常见参考值:</Text>
-          <View style={styles.referenceGrid}>
-            <Text style={styles.referenceItem}>蜡烛: ~0.1 Lux</Text>
-            <Text style={styles.referenceItem}>满月: ~0.27 Lux</Text>
-            <Text style={styles.referenceItem}>办公室: 300-500 Lux</Text>
-            <Text style={styles.referenceItem}>手术室: 10000+ Lux</Text>
-          </View>
-        </View>
-      </GlassCard>
+  const angleCalc = useMemo(() => {
+    if (spotDiameter <= 0 || beamDistAngle <= 0) return null;
+    const D = toM(spotDiameter);
+    const L = toM(beamDistAngle);
+    // Inverse beam-angle formula: θ = 2 · atan(D / (2L))
+    const angle = (2 * Math.atan(D / (2 * L)) * 180) / Math.PI;
+    return {
+      angle,
+      diameter: fromM(D),
+      dist: fromM(L),
+    };
+  }, [spotDiameter, beamDistAngle, toM, fromM]);
 
-      {illuminanceResults.length > 0 && (
-        <GlassCard style={styles.card} raised>
-          <Text style={styles.sectionTitle}>计算结果</Text>
-          <View style={styles.resultsGrid}>
-            {illuminanceResults.map((result, index) => (
-              <View
-                key={index}
-                style={[styles.resultItem, result.highlight && styles.resultItemHighlight]}
-              >
-                <Text style={styles.resultLabel}>{result.label}</Text>
-                <Text style={[styles.resultValue, result.highlight && styles.resultValueHighlight]}>
-                  {result.value}
-                </Text>
-                <Text style={styles.resultUnit}>{result.unit}</Text>
-              </View>
-            ))}
-          </View>
-        </GlassCard>
-      )}
+  const illumCalc = useMemo(() => {
+    if (lumen <= 0) return null;
+    // Diameter tab: use beam angle + beam dist
+    const dL = toM(beamDist);
+    const dRad = (beamAngle * Math.PI) / 180;
+    const dR = dL * Math.tan(dRad / 2);
+    const dArea = dR > 0 ? Math.PI * dR * dR : 0;
+    const diameterLux = dArea > 0 ? lumen / dArea : 0;
+    const diameterSpot = fromM(dR * 2);
 
-      <GlassCard style={styles.card}>
-        <View style={styles.formulaCard}>
-          <Ionicons name="bulb-outline" size={20} color={Colors.primary} />
-          <Text style={styles.formulaText}>
-            公式: E = (Φ / 4πd²) × cos(θ)
-          </Text>
-        </View>
-        <Text style={styles.tipText}>
-          输入灯具光通量、投射距离和入射角度，计算目标表面的照度值。
-          基于平方反比定律和余弦校正。
-        </Text>
-      </GlassCard>
-    </>
-  );
+    // Angle tab: compute beam angle from spot diameter + distance, then spot area
+    if (!angleCalc) {
+      return { diameterLux, diameterSpot, angleLux: 0, angleSpot: 0 };
+    }
+    const aL = toM(beamDistAngle);
+    const aRad = (angleCalc.angle * Math.PI) / 180;
+    const aR = aL * Math.tan(aRad / 2);
+    const aArea = aR > 0 ? Math.PI * aR * aR : 0;
+    const angleLux = aArea > 0 ? lumen / aArea : 0;
+    const angleSpot = fromM(aR * 2);
+
+    return { diameterLux, diameterSpot, angleLux, angleSpot };
+  }, [lumen, beamAngle, beamDist, angleCalc, beamDistAngle, toM, fromM]);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.bg }}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
-      <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={[styles.header, { paddingTop: insets.top > 0 ? 0 : 16 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <PageHeader
-          title="光束角度计算"
-          subtitle="灯光投射计算工具"
-          showTopSafeArea={false}
-        />
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderUnitToggle()}
-
-        <GlassTabGroup
-          tabs={tabs}
-          activeIndex={activeTab}
-          onChange={setActiveTab}
-          style={styles.tabGroup}
-        />
-
-        {activeTab === 0 && renderDistanceCalculator()}
-        {activeTab === 1 && renderSpotCalculator()}
-        {activeTab === 2 && renderIlluminanceCalculator()}
-
-        <View style={styles.actions}>
-          <GlassButton
-            variant="secondary"
-            size="small"
-            onPress={handleClear}
-          >
-            清除
-          </GlassButton>
-          <GlassButton
-            size="small"
-            onPress={handleShare}
-          >
-            <View style={styles.shareButtonContent}>
-              <Ionicons name="share-outline" size={18} color="#e0f2fe" />
-              <Text style={styles.shareButtonText}>分享结果</Text>
-            </View>
-          </GlassButton>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={22} color={Colors.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+              <PageHeader
+                title="光束角度计算"
+                subtitle="光斑直径 · 投射角度"
+                showTopSafeArea={false}
+              />
+          </View>
         </View>
-      </ScrollView>
+
+        <View style={styles.tabBar}>
+          {TABS.map((t) => {
+            const active = tab === t.key;
+            return (
+              <TouchableOpacity
+                key={t.key}
+                onPress={() => setTab(t.key)}
+                style={[styles.tabItem, active && styles.tabItemActive]}
+              >
+                <Ionicons
+                  name={t.icon}
+                  size={16}
+                  color={active ? Colors.primary : Colors.textMuted}
+                />
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                  {t.label}计算
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={styles.unitBar}>
+          {(['metric', 'imperial'] as Unit[]).map((u) => {
+            const active = unit === u;
+            return (
+              <TouchableOpacity
+                key={u}
+                style={[styles.unitPill, active && styles.unitPillActive]}
+                onPress={() => {
+                  if (active) return;
+
+                  if (unit === 'metric' && u === 'imperial') {
+                    setBeamDist(Number((beamDist * METERS_TO_FEET).toFixed(2)));
+                    setBeamDistAngle(Number((beamDistAngle * METERS_TO_FEET).toFixed(2)));
+                  } else if (unit === 'imperial' && u === 'metric') {
+                    setBeamDist(Number((beamDist * FEET_TO_METERS).toFixed(2)));
+                    setBeamDistAngle(Number((beamDistAngle * FEET_TO_METERS).toFixed(2)));
+                  }
+
+                  setUnit(u);
+                }}
+              >
+                <Text style={[styles.unitPillText, active && styles.unitPillTextActive]}>
+                  {u === 'metric' ? '米 (m)' : '英尺 (ft)'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={styles.sharedLumenWrap}>
+          <GlassSlider
+            label="光通量 Φ"
+            value={lumen}
+            min={100} max={50000} step={100}
+            unit="lm"
+            onChange={setLumen}
+            quickValues={[1000, 3000, 5000, 10000, 20000]}
+            onQuickValue={setLumen}
+          />
+        </View>
+
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {tab === 'diameter' && (
+            <>
+              <GlassCard style={styles.inputCard}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardIconWrap}>
+                    <Ionicons name="aperture-outline" size={18} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.cardTitle}>直径计算</Text>
+                  <Text style={styles.cardSubtitle}>D = 2 × L × tan(θ / 2)</Text>
+                </View>
+                <GlassSlider
+                  label="光束角度 θ"
+                  value={beamAngle}
+                  min={1} max={60} step={0.5}
+                  unit="°"
+                  onChange={setBeamAngle}
+                  quickValues={COMMON_ANGLES}
+                  onQuickValue={setBeamAngle}
+                />
+                <GlassSlider
+                  label="投射距离 L"
+                  value={beamDist}
+                  min={1} max={50} step={0.5}
+                  unit={dU}
+                  onChange={setBeamDist}
+                  quickValues={COMMON_DISTANCES_M}
+                  onQuickValue={setBeamDist}
+                />
+              </GlassCard>
+
+              {diameterCalc && (
+                <ConeDiagram
+                  angle={beamAngle}
+                  dist={beamDist}
+                  diameter={diameterCalc.diameter}
+                  unit={dU}
+                />
+              )}
+              {diameterCalc && (
+                <ResultPair
+                  label1="光斑直径" value1={diameterCalc.diameter} unit1={dU}
+                  label2="光斑半径" value2={diameterCalc.radius} unit2={dU}
+                  unit={dU}
+                />
+              )}
+              {illumCalc && (
+                <IllumResult
+                  centerLux={illumCalc.diameterLux}
+                  diameter={illumCalc.diameterSpot}
+                  area={0}
+                  unit={dU}
+                />
+              )}
+            </>
+          )}
+
+          {tab === 'angle' && (
+            <>
+              <GlassCard style={styles.inputCard}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardIconWrap}>
+                    <Ionicons name="triangle-outline" size={18} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.cardTitle}>角度计算</Text>
+                  <Text style={styles.cardSubtitle}>θ = 2 · atan(D / (2L))</Text>
+                </View>
+                <GlassSlider
+                  label="光斑直径 D"
+                  value={spotDiameter}
+                  min={0.5} max={10} step={0.1}
+                  unit={dU}
+                  onChange={setSpotDiameter}
+                  quickValues={[1, 2, 3, 5, 8]}
+                  onQuickValue={setSpotDiameter}
+                />
+                <GlassSlider
+                  label="投射距离 L"
+                  value={beamDistAngle}
+                  min={1} max={50} step={0.5}
+                  unit={dU}
+                  onChange={setBeamDistAngle}
+                  quickValues={COMMON_DISTANCES_M}
+                  onQuickValue={setBeamDistAngle}
+                />
+              </GlassCard>
+
+              {angleCalc && (
+                <ConeDiagram
+                  angle={angleCalc.angle}
+                  dist={angleCalc.dist}
+                  diameter={angleCalc.diameter}
+                  unit={dU}
+                />
+              )}
+              {angleCalc && (
+                <ResultPair
+                  label1="所需光束角" value1={angleCalc.angle} unit1="°"
+                  label2="光斑直径" value2={angleCalc.diameter} unit2={dU}
+                  unit={dU}
+                />
+              )}
+              {illumCalc && (
+                <IllumResult
+                  centerLux={illumCalc.angleLux}
+                  diameter={illumCalc.angleSpot}
+                  area={0}
+                  unit={dU}
+                />
+              )}
+            </>
+          )}
+
+          <View style={{ height: 24 }} />
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
 
+// ============================================================
+// Styles
+// ============================================================
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
-  header: {
+  backBtn: {
+    padding: 8,
+    marginTop: 14,
+    marginLeft: 4,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: Colors.glass,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
+    marginBottom: 12,
+  },
+  tabItem: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 8,
-    paddingRight: 16,
+    justifyContent: 'center',
+    gap: 5,
+    borderRadius: 10,
   },
-  backButton: {
-    padding: 8,
-    marginRight: -4,
+  tabItemActive: {
+    backgroundColor: Colors.primaryGlow,
+    borderWidth: 1,
+    borderColor: Colors.borderActive,
   },
-  scrollView: {
-    flex: 1,
+  tabLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+  tabLabelActive: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  unitBar: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    gap: 8,
+  },
+  sharedLumenWrap: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  unitPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  unitPillActive: {
+    backgroundColor: Colors.primaryGlow,
+    borderColor: Colors.borderActive,
+  },
+  unitPillText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+  unitPillTextActive: {
+    color: Colors.primary,
+    fontWeight: '600',
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 32,
   },
-  tabGroup: {
-    marginBottom: 20,
+  inputCard: {
+    marginBottom: 12,
+    padding: 14,
   },
-  card: {
-    marginBottom: 16,
-    padding: 16,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
   },
-  sectionTitle: {
+  cardIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Colors.primaryGlow,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
-    marginBottom: 16,
   },
-  unitToggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    gap: 12,
+  cardSubtitle: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginLeft: 'auto',
+    fontVariant: ['tabular-nums'],
   },
-  unitToggleGroup: {
-    flexDirection: 'row',
+  // Diagrams
+  diagramCard: {
     backgroundColor: Colors.glass,
-    borderRadius: 12,
-    padding: 4,
-    flex: 1,
-  },
-  unitToggleButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  unitToggleButtonActive: {
-    backgroundColor: Colors.primaryGlow,
     borderWidth: 1,
-    borderColor: Colors.borderActive,
-  },
-  unitToggleText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  unitToggleTextActive: {
-    color: Colors.primary,
-  },
-  inputRow: {
+    borderColor: Colors.borderIce,
+    borderRadius: 16,
+    padding: 12,
     marginBottom: 12,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.inputBg,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
   },
-  inputLabel: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    paddingLeft: 16,
-    width: 70,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  inputUnit: {
-    fontSize: 13,
+  diagramHeader: {
+    alignSelf: 'flex-start',
+    fontSize: 11,
     color: Colors.textMuted,
-    paddingRight: 16,
-    minWidth: 50,
-    textAlign: 'right',
-  },
-  quickButtons: {
-    marginTop: 8,
-  },
-  quickButtonsLabel: {
-    fontSize: 12,
-    color: Colors.textMuted,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 8,
   },
-  quickButtonsRow: {
-    flexDirection: 'row',
-    gap: 8,
+  coneArena: {
+    width: 240,
+    height: 180,
+    position: 'relative',
+    alignItems: 'center',
   },
-  quickButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: Colors.glass,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  lampBody: {
+    position: 'absolute',
+    width: 20,
+    height: 8,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
   },
-  quickButtonActive: {
-    backgroundColor: Colors.primaryGlow,
-    borderColor: Colors.borderActive,
+  cone: {
+    position: 'absolute',
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'rgba(255, 200, 100, 0.2)',
+    borderTopColor: 'transparent',
   },
-  quickButtonText: {
-    fontSize: 13,
+  axisLine: {
+    position: 'absolute',
+    width: 1,
+    backgroundColor: 'rgba(255, 200, 100, 0.18)',
+  },
+  coneEdgeLabel: {
+    position: 'absolute',
+  },
+  coneBottomLabel: {
+    position: 'absolute',
+    bottom: 22,
+    alignItems: 'center',
+  },
+  coneBottomText: {
+    fontSize: 11,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
-  quickButtonTextActive: {
-    color: Colors.primary,
-  },
-  resultsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  resultItem: {
-    width: '47%',
-    backgroundColor: Colors.glass,
-    borderRadius: 12,
-    padding: 16,
+  bottomLabel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
-  resultItemHighlight: {
-    width: '100%',
-    backgroundColor: Colors.primaryGlow,
-    borderWidth: 1,
-    borderColor: Colors.borderActive,
+  distLabel: {
+    position: 'absolute',
+    right: 8,
+    top: 75,
+  },
+  edgeLabelText: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  groundLine: {
+    position: 'absolute',
+    bottom: 16,
+    left: 8,
+    right: 8,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+  },
+  spot: {
+    position: 'absolute',
+    bottom: 12,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(255, 200, 100, 0.55)',
+  },
+  // Results
+  resultCard: {
+    marginBottom: 12,
+    padding: 12,
+  },
+  resultsRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  resultBox: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  resultDivider: {
+    width: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 6,
   },
   resultLabel: {
     fontSize: 12,
@@ -884,75 +647,45 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   resultValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.text,
-  },
-  resultValueHighlight: {
-    fontSize: 32,
     color: Colors.primary,
+  },
+  resultValueSmall: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
   },
   resultUnit: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: Colors.primary,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  resultUnitSmall: {
+    fontSize: 11,
+    color: Colors.textMuted,
     marginTop: 2,
   },
-  formulaCard: {
-    flexDirection: 'row',
+  illumHero: {
     alignItems: 'center',
-    backgroundColor: Colors.glass,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    gap: 8,
+    paddingVertical: 16,
+    marginBottom: 14,
+    backgroundColor: Colors.primaryGlow,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderActive,
   },
-  formulaText: {
+  illumHeroValue: {
+    fontSize: 44,
+    fontWeight: 'bold',
+    color: Colors.primary,
+    letterSpacing: -1,
+  },
+  illumHeroUnit: {
     fontSize: 13,
     color: Colors.primary,
     fontWeight: '500',
-  },
-  tipText: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    lineHeight: 20,
-  },
-  referenceValues: {
-    marginTop: 12,
-    backgroundColor: Colors.glass,
-    borderRadius: 10,
-    padding: 12,
-  },
-  referenceTitle: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  referenceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  referenceItem: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    backgroundColor: Colors.inputBg,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  shareButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  shareButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#e0f2fe',
+    marginTop: 2,
   },
 });

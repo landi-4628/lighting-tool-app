@@ -37,6 +37,7 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="index" />
+          <Stack.Screen name="menu" />
           <Stack.Screen name="tools/bpm" options={{ title: 'BPM 检测' }} />
           <Stack.Screen name="tools/ltc" options={{ title: 'LTC 时码' }} />
           <Stack.Screen name="tools/audio" options={{ title: '音频工具' }} />
