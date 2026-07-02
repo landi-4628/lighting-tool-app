@@ -299,6 +299,7 @@ export default function HomeScreen() {
                   onChange={setBeamAngle}
                   quickValues={COMMON_ANGLES}
                   onQuickValue={setBeamAngle}
+                  enableTextInput
                 />
                 <GlassSlider
                   label="投射距离 L"
@@ -308,6 +309,7 @@ export default function HomeScreen() {
                   onChange={setBeamDist}
                   quickValues={COMMON_DISTANCES_M}
                   onQuickValue={setBeamDist}
+                  enableTextInput
                 />
               </GlassCard>
 
@@ -355,6 +357,7 @@ export default function HomeScreen() {
                   onChange={setSpotDiameter}
                   quickValues={[1, 2, 3, 5, 8]}
                   onQuickValue={setSpotDiameter}
+                  enableTextInput
                 />
                 <GlassSlider
                   label="投射距离 L"
@@ -364,6 +367,7 @@ export default function HomeScreen() {
                   onChange={setBeamDistAngle}
                   quickValues={COMMON_DISTANCES_M}
                   onQuickValue={setBeamDistAngle}
+                  enableTextInput
                 />
               </GlassCard>
 

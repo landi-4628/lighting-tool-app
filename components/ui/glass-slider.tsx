@@ -46,14 +46,18 @@ export const GlassSlider = React.memo(function GlassSlider({
   quickValues,
   onQuickValue,
   disabled = false,
+  enableTextInput = false,
 }: GlassSliderProps) {
   const trackWidthRef = useRef(0);
   const draggingRef = useRef(false);
   const startPageXRef = useRef(0);
   const startValueRef = useRef(0);
   const lastEmittedRef = useRef<number>(value);
-  // Local mirror of value so thumb position never lags parent re-render.
   const [localValue, setLocalValue] = React.useState(value);
+
+  const [textEditing, setTextEditing] = useState(false);
+  const [textValue, setTextValue] = useState('');
+  const inputRef = useRef<TextInput>(null);
 
   // Keep local mirror in sync when parent value changes externally (e.g. unit toggle, quick chip).
   useEffect(() => {
@@ -155,30 +159,82 @@ export const GlassSlider = React.memo(function GlassSlider({
     ? quickValues.findIndex((qv) => Math.abs(localValue - qv) < step / 2)
     : -1;
 
+  const handleSubmit = () => {
+    const parsed = parseFloat(textValue);
+    if (!isNaN(parsed)) {
+      const snapped = snapToStep(parsed, minRef.current, stepRef.current);
+      const clamped = Math.max(minRef.current, Math.min(maxRef.current, snapped));
+      emit(clamped);
+    }
+    setTextEditing(false);
+  };
+
+  const handleValuePress = () => {
+    if (!enableTextInput || disabled) return;
+    setTextValue(String(localValue));
+    setTextEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const handleTextChange = (text: string) => {
+    const cleaned = text.replace(',', '.');
+    if (cleaned === '' || /^-?\d*\.?\d*$/.test(cleaned)) {
+      setTextValue(cleaned);
+    }
+  };
+
   return (
     <View style={[styles.container, disabled && styles.disabled]}>
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>
-          {displayValue}
-          <Text style={styles.unit}>{unit ? ` ${unit}` : ''}</Text>
-        </Text>
+        {enableTextInput ? (
+          textEditing ? (
+            <View style={styles.inputWrap}>
+              <TextInput
+                ref={inputRef}
+                style={styles.textInput}
+                value={textValue}
+                onChangeText={handleTextChange}
+                onBlur={handleSubmit}
+                onSubmitEditing={handleSubmit}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                autoSelectAll
+              />
+              <Text style={styles.unit}>{unit ? ` ${unit}` : ''}</Text>
+            </View>
+          ) : (
+            <Pressable onPress={handleValuePress} disabled={disabled}>
+              <Text style={styles.value}>
+                {displayValue}
+                <Text style={styles.unit}>{unit ? ` ${unit}` : ''}</Text>
+              </Text>
+            </Pressable>
+          )
+        ) : (
+          <Text style={styles.value}>
+            {displayValue}
+            <Text style={styles.unit}>{unit ? ` ${unit}` : ''}</Text>
+          </Text>
+        )}
       </View>
 
       <View
         style={styles.trackContainer}
         onLayout={handleLayout}
-        {...panResponder.panHandlers}
+        {...(!enableTextInput ? panResponder.panHandlers : {})}
       >
         <View style={styles.track}>
           <View style={[styles.fill, { width: `${percent}%` }]} />
         </View>
-        <View
-          pointerEvents="none"
-          style={[styles.thumb, { left: `${percent}%` }]}
-        >
-          <View style={styles.thumbInner} />
-        </View>
+        {!enableTextInput && (
+          <View
+            pointerEvents="none"
+            style={[styles.thumb, { left: `${percent}%` }]}
+          >
+            <View style={styles.thumbInner} />
+          </View>
+        )}
       </View>
 
       {quickValues && quickValues.length > 0 && (
@@ -232,6 +288,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
     fontWeight: '400',
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  textInput: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 64,
+    textAlign: 'right',
   },
   trackContainer: {
     height: 32,
