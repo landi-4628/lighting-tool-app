@@ -1,10 +1,12 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   PanResponder,
   LayoutChangeEvent,
+  Pressable,
 } from 'react-native';
 import { Colors } from '@/constants/colors';
 
@@ -20,6 +22,7 @@ interface GlassSliderProps {
   quickValues?: number[];
   onQuickValue?: (value: number) => void;
   disabled?: boolean;
+  enableTextInput?: boolean;
 }
 
 // Round to nearest step using integer math to avoid float drift (e.g. 28.49999...).

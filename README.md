@@ -1,50 +1,71 @@
-# Welcome to your Expo app 👋
+# Lighting Tool App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo 项目，用于灯光相关工具与计算。
 
-## Get started
+## 本地开发
 
-1. Install dependencies
+1. 安装依赖
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. 启动项目
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. 运行到设备或模拟器
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   - 用 Expo Go 扫码
+   - 或用 Android/iOS 模拟器
+   - 或在真机上做开发构建
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 打包成安卓 APK
 
-## Get a fresh project
+推荐使用 EAS Build：
 
-When you're ready, run:
+1. 登录 Expo
 
-```bash
-npm run reset-project
-```
+   ```bash
+   npx expo login
+   ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. 初始化 EAS 配置
 
-## Learn more
+   ```bash
+   npx eas build:configure
+   ```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. 构建 APK
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+   ```bash
+   npx eas-cli build --platform android --profile preview
+   ```
 
-## Join the community
+构建完成后，Expo 会提供下载链接。首次构建需要较长时间。
 
-Join our community of developers creating universal apps.
+## 打包成 iOS 安装包
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+推荐使用 EAS Build：
+
+1. 登录 Expo 并初始化 EAS 配置
+
+   ```bash
+   npx expo login
+   npx eas build:configure
+   ```
+
+2. 构建 iOS 安装包
+
+   ```bash
+   npx eas-cli build --platform ios --profile preview
+   ```
+
+3. 安装方式
+
+   - 通过 TestFlight 分发
+   - 或使用 Apple Configurator / 企业证书安装
+
+注意：iOS 打包需要有效的 Apple Developer Program 账号，并且需要在 EAS 中配置相应的证书和描述文件。
